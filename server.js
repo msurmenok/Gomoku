@@ -20,15 +20,19 @@ var grid = [];
 var activePlayerID;
 
 io.sockets.on('connection', function(socket) {
-	socket.userID = uuid.v1();
+	socket.userID = uuid.v1(); // generate unique userID
 	console.log(players.length);
 	players.push(new Player(socket.userID, getSide(players)));
 
 	activePlayerID = players[0].id;
 	
 	
-	socket.emit('setUserId', socket.userID, activePlayerID);
+	socket.emit('setUserId', socket.userID);
 	console.log(players);
+
+	if(players.length == 2) {
+		io.sockets.emit('startGame', activePlayerID)
+	}
 
 	socket.on('move', function(newX, newY, playerID) {
 		console.log("x: " + newX + " y: " + newY + " id: " + playerID);
@@ -48,7 +52,10 @@ io.sockets.on('connection', function(socket) {
 		} else {
 			activePlayerID = players[0].id;
 		}
-		socket.emit('changeActivePlayer', activePlayerID);
+
+		//change active player and redraw game field
+		io.sockets.emit('changeActivePlayer', activePlayerID, grid[grid.length - 1].x, grid[grid.length - 1].y, grid[grid.length - 1].playerID,
+			players[0].id, players[1].id);
 		console.log("active player id: " + activePlayerID);
 		console.log(grid);
 	});

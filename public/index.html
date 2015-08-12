@@ -6,39 +6,111 @@
 		<script type="text/javascript">
 			var socket = io.connect();
 			var activePlayerID;
-			socket.on('setUserId', function(newId, newActivePlayerID) {
+			var playerX;
+			var playerO;
+
+			socket.on('setUserId', function(newId) {
 				socket.userID = newId;
-				activePlayerID = newActivePlayerID;
 				document.getElementById('info').innerHTML = " new userID = " + newId;
 			});
-			socket.on('changeActivePlayer', function(newActivePlayerID) {
-				activePlayerID = newActivePlayerID;
-				console.log(activePlayerID);
-			});
+
+			
+
+			//change active player and redraw 
 
 			$(document).ready(function() {
-				$('#submit').click(function() {
-					var x = parseInt($('#xValue').val(), 10);
-					var y = parseInt($('#yValue').val(), 10);
+
+				
+
+				//drawing game field
+				var canvas = document.getElementById("gameField");
+				var ctx = canvas.getContext("2d");
+
+				//drawing grid
+				var gridStep = canvas.width/20;
+				
+				for(var i = gridStep; i < 600; i+=gridStep) {
+					ctx.moveTo(i, 0);
+					ctx.lineTo(i, 600);
+					ctx.moveTo(0, i);
+					ctx.lineTo(600, i);
+				}
+				ctx.strokeStyle="#a3a3a3";
+				ctx.stroke();
+
+				//load images? or draw it too!
+				//var imageX = new Image();
+				//var imageO = new Image();
+
+				//calculate canvas position and mouse position
+				var canvasPosition = {
+					x: $("#gameField").offset().left,
+					y: $("#gameField").offset().top
+				}
+
+				canvas.addEventListener('click', function(e) {
+					var mouse = {
+						x: e.pageX - canvasPosition.x,
+						y: e.pageY - canvasPosition.y 
+					}
+
+					var positionX = Math.ceil(mouse.x / gridStep);
+					var positionY = Math.ceil(mouse.y / gridStep);
+
+					//emit new move
 
 					if(/*socket.userID === activePlayerID &&*/
-						!isNaN(x) && !isNaN(y) &&
-						x > 0 && x < 21 &&
-						y > 0 && y < 21) {
-						socket.emit('move', x, y, socket.userID);
+						positionX > 0 && positionX < 21 &&
+						positionY > 0 && positionY < 21) {
+						socket.emit('move', positionX, positionY, socket.userID);
 					}
+				});
+
+				socket.on('startGame', function(newActivePlayerID) {
+					activePlayerID = newActivePlayerID;
+				});
+
+				socket.on('changeActivePlayer', function(newActivePlayerID, x, y, id, plrX, plrO) {
+					var prevActivePlayerID = activePlayerID;
+					activePlayerID = newActivePlayerID;
+
+					console.log("player X = " + plrX);
+					console.log("player O " + plrO);
+					playerX = plrX;
+					playerO = plrO;
+					//alert(x + " " + y + " " + playerX);
+
+					var shape = canvas.getContext("2d");
+					shape.beginPath();
+
+					if(prevActivePlayerID === plrX) {
+						shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
+						shape.lineTo(x*gridStep -5, y*gridStep - 5);
+						shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
+						shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
+						shape.strokeStyle = "green";					
+					} else if(prevActivePlayerID === plrO) {
+						shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
+						shape.strokeStyle = "blue";
+					}
+
+					shape.stroke();
+
+
+					
+					console.log(activePlayerID);
 
 				});
 			});
+
+
+
 		</script>
 	</head>
 	<body>
-		<p id="info"></p>
-		<p id="feId"></p>
-		<div>Ваш ход (от 1 до 20)
-			<p>X: <input type="text" id="xValue"/></p>			
-			<p>Y: <input type="text" id="yValue"></p>
-			<input type="button" id="submit" value="submit"/>			
+		<p id="info" style="height:20px"></p>
+		<div>
+			<canvas id="gameField" width="600" height="600" style="border: 1px solid #c3c3c3;"></canvas>
 		</div>
 	</body>
 </html>
