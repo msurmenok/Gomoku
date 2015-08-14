@@ -1,94 +1,64 @@
-var app = require('http').createServer(handler);
-var io = require('socket.io').listen(app);
+var http = require('http');
 var fs = require('fs');
-var uuid = require('node-uuid');
-var html = fs.readFileSync('./public/index.html', 'utf8');
+var path = require('path');
+var mime = require('mime');
+var cache = {};
 
-function handler(req, res) {
-	res.setHeader('Content-Type', 'text/html; charset=utf-8');
-	res.setHeader('Content-Length', Buffer.byteLength(html, 'utf8'));
-	res.write(html);
-	res.end();
+function send404(response) {
+	response.writeHead(404, {'Content-Type': 'text/plain'});
+	response.write('Error 404: resource not found.');
+	response.end();
 }
 
+function sendFile(response, filePath, fileContents) {
+	response.writeHead(
+		200,
+		{"content-type": mime.lookup(path.basename(filePath))}
+	);
+	response.end(fileContents);
+}
 
-//work with game logic
-var maxPlayers = 2;
-var numberOfPlayers = 0;
-var players = [];
-var grid = [];
-var activePlayerID;
-
-io.sockets.on('connection', function(socket) {
-	socket.userID = uuid.v1(); // generate unique userID
-	console.log(players.length);
-	players.push(new Player(socket.userID, getSide(players)));
-
-	activePlayerID = players[0].id;
-	
-	
-	socket.emit('setUserId', socket.userID);
-	console.log(players);
-
-	if(players.length == 2) {
-		io.sockets.emit('startGame', activePlayerID)
+function serveStatic(response, cache, absPath) {
+	if (cache[absPath]) {
+		sendFile(response, absPath, cache[absPath]);
 	}
-
-	socket.on('move', function(newX, newY, playerID) {
-		console.log("x: " + newX + " y: " + newY + " id: " + playerID);
-		if(playerID != activePlayerID) {
-			return;
-		}
-
-		for(var i = 0; i < grid.length; i++) {
-			if(grid[i].x === newX && grid[i].y === newY) {
-				return;
+	else {
+		fs.exists(absPath, function(exists) {
+			if (exists) {
+				fs.readFile(absPath, function(err, data) {
+					if (err) {
+						send404(response);
+					}
+					else {
+						cache[absPath] = data;
+						sendFile(response, absPath, data);
+					}
+				});
 			}
-		}
-		grid.push(new Move(newX, newY, activePlayerID));
+			else {
+				send404(response);
+			}
+		});	
+	}
+}
 
-		if(players[0].id === playerID) {
-			activePlayerID = players[1].id;
-		} else {
-			activePlayerID = players[0].id;
-		}
-
-		//change active player and redraw game field
-		io.sockets.emit('changeActivePlayer', activePlayerID, grid[grid.length - 1].x, grid[grid.length - 1].y, grid[grid.length - 1].playerID,
-			players[0].id, players[1].id);
-		console.log("active player id: " + activePlayerID);
-		console.log(grid);
-	});
+var server = http.createServer(function(request, response) {
+	var filePath = false;
 	
+	if (request.url == '/') {
+		filePath = 'public/index.html';
+	}
+	else {
+		filePath = 'public' + request.url;
+	}
+	var absPath = './' + filePath;
+	serveStatic(response, cache, absPath);
 });
 
+server.listen(3000, function() {
+	console.log('Server listening on port 3000.');
+});
 
+var gameServer = require('./lib/game_server');
+gameServer.listen(server);
 
-//constructor for Player
-function Player(id, side) {
-	this.id = id;
-	this.side = side;
-}
-
-function Move(x, y, playerID) {
-	this.x = x,
-	this.y = y,
-	this.playerID = playerID
-}
-//return side based on number of players
-// ' ' - spectators
-var getSide = function(array){
-	switch(array.length) {
-		case 0: 
-			return 'X';
-			break;
-		case 1:
-			return 'O';
-			break;
-		default:
-			return ' ';
-	}
-}
- 
-app.listen(8000);
-console.log("Server started");
