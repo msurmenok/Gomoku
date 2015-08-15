@@ -3,11 +3,14 @@
 	<head>		
 	</head>
 	<body>
-		<p id="info" style="height:20px"></p>
+		
 		<div>
+			<p id="roomName"></p>
+			<p id="info" style="height:20px"></p>
 			<input type="button" id="newGame" value="New Game"/>
 		</div>
 		<div>
+
 			<p>Choose a side:</p>
 			<p><input type="radio" name="side" id="sideX"><strong>X</strong></p>
 			<p><input type="radio"name="side" id="sideO"><strong>O</strong></p>
@@ -16,6 +19,8 @@
 		<div>
 			<canvas id="gameField" width="600" height="600" style="border: 1px solid #c3c3c3;"></canvas>
 		</div>
+		<div id='room-list'></div>
+
 		<script src='/socket.io/socket.io.js' type='text/javascript'></script>
 		<script src='http://code.jquery.com/jquery-1.8.0.min.js' type='text/javascript'></script>
 		<script src='/javascripts/game_ui.js' type='text/javascript'></script>

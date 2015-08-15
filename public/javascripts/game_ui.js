@@ -4,28 +4,73 @@ var players = [];
 var inputSide = ["#sideX", "#sideO"];
 var gameOver = false;
 
-	//drawing game field
-	var canvas = document.getElementById("gameField");
-	var ctx = canvas.getContext("2d");
-	ctx.beginPath();
-
-	//drawing grid
-	var gridStep = canvas.width/20;
-					
-	for(var i = gridStep; i < 600; i+=gridStep) {
-		ctx.moveTo(i, 0);
-		ctx.lineTo(i, 600);
-		ctx.moveTo(0, i);
-		ctx.lineTo(600, i);
-	}
-	ctx.strokeStyle="#a3a3a3";
-	ctx.stroke();
+var canvas = document.getElementById("gameField");
 	
+	//drawing game field
+	function drawGrid() {		
+		var ctx = canvas.getContext("2d");
+		ctx.beginPath();
+
+		//drawing grid
+		var gridStep = canvas.width/20;
+						
+		for(var i = gridStep; i < 600; i+=gridStep) {
+			ctx.moveTo(i, 0);
+			ctx.lineTo(i, 600);
+			ctx.moveTo(0, i);
+			ctx.lineTo(600, i);
+		}
+		ctx.strokeStyle="#a3a3a3";
+		ctx.stroke();
+	}
+
+	//drawing moves
+	function drawMove(x, y, playerId) {
+
+		var shape = canvas.getContext("2d");
+
+		shape.beginPath();
+
+		if(playerId === players[0]) {
+			shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
+			shape.lineTo(x*gridStep -5, y*gridStep - 5);
+			shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
+			shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
+			shape.strokeStyle = "green";					
+		} else if(playerId === players[1]) {
+			shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
+			shape.strokeStyle = "blue";
+		}
+
+		shape.stroke();
+	}
+
+	//give user new user id
 	socket.on('setUserID', function(newId) {
 		socket.userID = newId;
 		$("#info").text("new userID = " + newId);
-		socket.emit('join', socket.userID)
+		//socket.emit('join', socket.userID)
 	});	
+
+	//join to room
+	socket.on('joinResult', function(answer) {
+		var room = answer.room;
+		$("#roomName").text("You are in the room: " + room);
+
+		activePlayerID = answer.activePlayerID;
+		players = answer.players;
+		gameOver = answer.gameOver;
+
+		var grid = answer.grid;
+		drawGrid();
+
+		for(var i = 0; i < grid.length; i++) {
+			drawMove(grid.x, grid.y, grid.playerID);
+		}
+
+	});
+
+
 
 	//Choose side 
 	//Check if current side is available
@@ -56,15 +101,15 @@ var gameOver = false;
 
 	//erase side if it had already choosen
 	socket.on('playerChoosen', function(answer) {
-		var id = answer.id;
+		var id = answer.userId;
 		var side = answer.side;
 		players[side] = id;
 		$(inputSide[side]).remove();
 	})
 
 	//assign active player and start the game
-	socket.on('gameStarted', function(id) {
-		activePlayerID = id;
+	socket.on('gameStarted', function(answer) {
+		activePlayerID = answer.activePlayerID;
 	});
 
 	canvas.addEventListener('click', function(e) {
@@ -99,6 +144,7 @@ var gameOver = false;
 		var x = answer.x;
 		var y = answer.y;
 		gameOver = answer.gameOver;
+
 		var shape = canvas.getContext("2d");
 
 		shape.beginPath();
@@ -119,6 +165,23 @@ var gameOver = false;
 		if(gameOver) {
 			alert("Game over");
 		}
+	});
+
+	//create New Game
+	$("#newGame").click(function() {
+		socket.emit('createNewGame', socket.userID);
+	});
+
+	//watch curren Rooms	
+	socket.on('rooms', function(rooms) {
+    	$('#room-list').empty();
+	    for(var room in rooms) {
+	      room = room.substring(1, room.length);
+	      if (room != '') {
+	      	var roomMessage = "<p> " + room + "</p>";
+	        $('#room-list').append(roomMessage);
+	      }
+	    }
 	});
 
 
