@@ -9,16 +9,12 @@
 			<p id="info" style="height:20px"></p>
 			<input type="button" id="newGame" value="New Game"/>
 		</div>
-		<div>
-
-			<p>Choose a side:</p>
-			<p><input type="radio" name="side" id="sideX"><strong>X</strong></p>
-			<p><input type="radio"name="side" id="sideO"><strong>O</strong></p>
-			<p id="sideInfo"></p>
+		<div id="gameContainer">			
 		</div>
-		<div>
-			<canvas id="gameField" width="600" height="600" style="border: 1px solid #c3c3c3;"></canvas>
+		<div id="canvasContainer">				
 		</div>
+		
+		
 		<div id='room-list'></div>
 
 		<script src='/socket.io/socket.io.js' type='text/javascript'></script>

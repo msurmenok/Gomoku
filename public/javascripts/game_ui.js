@@ -4,16 +4,15 @@ var players = [];
 var inputSide = ["#sideX", "#sideO"];
 var gameOver = false;
 
-var canvas = document.getElementById("gameField");
+
 	
 	//drawing game field
-	function drawGrid() {		
+	function drawGrid(canvas, gridStep) {
+
 		var ctx = canvas.getContext("2d");
 		ctx.beginPath();
 
-		//drawing grid
-		var gridStep = canvas.width/20;
-						
+		//drawing grid						
 		for(var i = gridStep; i < 600; i+=gridStep) {
 			ctx.moveTo(i, 0);
 			ctx.lineTo(i, 600);
@@ -25,7 +24,7 @@ var canvas = document.getElementById("gameField");
 	}
 
 	//drawing moves
-	function drawMove(x, y, playerId) {
+	function drawMove(x, y, playerId, canvas, gridStep) {
 
 		var shape = canvas.getContext("2d");
 
@@ -61,26 +60,103 @@ var canvas = document.getElementById("gameField");
 		players = answer.players;
 		gameOver = answer.gameOver;
 
-		var grid = answer.grid;
-		drawGrid();
+		//remove previous elements
+		$("#gameContainer p").remove();
+		$("#gameContainer div").remove();
+		$("#canvasContainer canvas").remove();
 
-		for(var i = 0; i < grid.length; i++) {
-			drawMove(grid.x, grid.y, grid.playerID);
+		//add html elements
+		$('<p>Choose a side:</p>').appendTo("#gameContainer");
+
+		if(!players[0]) {
+			$('<div id="sideX"><input type="radio" name="side" ><strong>X</strong></div>').appendTo("#gameContainer");
 		}
 
+		if(!players[1]) {
+			$('<div id="sideO"><input type="radio"name="side" ><strong>O</strong></div>').appendTo("#gameContainer");
+		}
+
+		$('<p id="sideInfo"></p>').appendTo("#gameContainer");
+		$('<canvas id="gameField" width="600" height="600" style="border: 1px solid #c3c3c3;"></canvas>').appendTo("#canvasContainer");
+
+		var canvas = document.getElementById("gameField");
+		var gridStep = canvas.width/20;
+
+		var grid = answer.grid;
+		drawGrid(canvas, gridStep);
+
+		console.log(grid);
+		for(var i = 0; i < grid.length; i++) {
+			drawMove(grid[i].x, grid[i].y, grid[i].playerID, canvas, gridStep);
+		}
+
+		//calculate canvas position and mouse position
+		canvas.addEventListener('click', function(e) {			
+			var canvasPosition = {
+				x: $("#gameField").offset().left,
+				y: $("#gameField").offset().top
+			}
+
+			var mouse = {
+				x: e.pageX - canvasPosition.x,
+				y: e.pageY - canvasPosition.y 
+			}
+
+			var positionX = Math.ceil(mouse.x / gridStep);
+			var positionY = Math.ceil(mouse.y / gridStep);
+			//emit new move
+
+			if(/*socket.userID === activePlayerID &&*/
+				positionX > 0 && positionX < 21 &&
+				positionY > 0 && positionY < 21) {
+				socket.emit('move', socket.userID, positionX, positionY);
+			}
+		});
+
+		//Choose side 
+		//Check if current side is available
+		$("#sideX").click(function() {
+			socket.emit('verifySide', {id: socket.userID, side: 0});
+		});
+
+		$("#sideO").click(function() {
+			socket.emit('verifySide', {id: socket.userID, side: 1});
+		});
+
+		//move
+		socket.on('moveDone', function(answer) {
+			//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
+			console.log(answer);
+			var prevActivePlayer = answer.userId;
+			activePlayerID = answer.activePlayerID;
+			var x = answer.x;
+			var y = answer.y;
+			gameOver = answer.gameOver;
+
+			var shape = canvas.getContext("2d");
+
+			shape.beginPath();
+
+			if(prevActivePlayer === players[0]) {
+				shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
+				shape.lineTo(x*gridStep -5, y*gridStep - 5);
+				shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
+				shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
+				shape.strokeStyle = "green";					
+			} else if(prevActivePlayer === players[1]) {
+				shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
+				shape.strokeStyle = "blue";
+			}
+
+			shape.stroke();
+
+			if(gameOver) {
+				alert("Game over");
+			}
+		});
+
 	});
-
-
-
-	//Choose side 
-	//Check if current side is available
-	$("#sideX").click(function() {
-		socket.emit('verifySide', {id: socket.userID, side: 0});
-	});
-
-	$("#sideO").click(function() {
-		socket.emit('verifySide', {id: socket.userID, side: 1});
-	});
+	
 
 
 	socket.on('attemptSide', function(answer) {
@@ -112,60 +188,9 @@ var canvas = document.getElementById("gameField");
 		activePlayerID = answer.activePlayerID;
 	});
 
-	canvas.addEventListener('click', function(e) {
-		//calculate canvas position and mouse position
-		var canvasPosition = {
-			x: $("#gameField").offset().left,
-			y: $("#gameField").offset().top
-		}
 
-		var mouse = {
-			x: e.pageX - canvasPosition.x,
-			y: e.pageY - canvasPosition.y 
-		}
 
-		var positionX = Math.ceil(mouse.x / gridStep);
-		var positionY = Math.ceil(mouse.y / gridStep);
-		//emit new move
-
-		if(/*socket.userID === activePlayerID &&*/
-			positionX > 0 && positionX < 21 &&
-			positionY > 0 && positionY < 21) {
-			socket.emit('move', socket.userID, positionX, positionY);
-		}
-	});
-
-	//move
-	socket.on('moveDone', function(answer) {
-		//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
-		console.log(answer);
-		var prevActivePlayer = answer.userId;
-		activePlayerID = answer.activePlayerID;
-		var x = answer.x;
-		var y = answer.y;
-		gameOver = answer.gameOver;
-
-		var shape = canvas.getContext("2d");
-
-		shape.beginPath();
-
-		if(prevActivePlayer === players[0]) {
-			shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
-			shape.lineTo(x*gridStep -5, y*gridStep - 5);
-			shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
-			shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
-			shape.strokeStyle = "green";					
-		} else if(prevActivePlayer === players[1]) {
-			shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
-			shape.strokeStyle = "blue";
-		}
-
-		shape.stroke();
-
-		if(gameOver) {
-			alert("Game over");
-		}
-	});
+	
 
 	//create New Game
 	$("#newGame").click(function() {
@@ -178,11 +203,18 @@ var canvas = document.getElementById("gameField");
 	    for(var room in rooms) {
 	      room = room.substring(1, room.length);
 	      if (room != '') {
-	      	var roomMessage = "<p> " + room + "</p>";
-	        $('#room-list').append(roomMessage);
+	      	var roomMessage = "<div>" + room + "</div>";   	
+	      	$(roomMessage).appendTo("#room-list");
 	      }
 	    }
+
+		//join to Game
+	    $('#room-list div').click(function(e) {
+	        socket.emit('joinGame', socket.userID, $(e.target).text());
+	    });
 	});
+
+	socket.emit('rooms');
 
 
 	
