@@ -124,37 +124,43 @@ var gameOver = false;
 		});
 
 		//move
-		socket.on('moveDone', function(answer) {
-			//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
-			console.log(answer);
-			var prevActivePlayer = answer.userId;
-			activePlayerID = answer.activePlayerID;
-			var x = answer.x;
-			var y = answer.y;
-			gameOver = answer.gameOver;
+		//delete listener
 
-			var shape = canvas.getContext("2d");
 
-			shape.beginPath();
 
-			if(prevActivePlayer === players[0]) {
-				shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
-				shape.lineTo(x*gridStep -5, y*gridStep - 5);
-				shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
-				shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
-				shape.strokeStyle = "green";					
-			} else if(prevActivePlayer === players[1]) {
-				shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
-				shape.strokeStyle = "blue";
-			}
+	});
 
-			shape.stroke();
+	socket.on('moveDone', function(answer) {
+		//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
+		var canvas = document.getElementById("gameField");
+		var gridStep = canvas.width/20;
+		console.log(answer);
+		var prevActivePlayer = answer.userId;
+		activePlayerID = answer.activePlayerID;
+		var x = answer.x;
+		var y = answer.y;
+		gameOver = answer.gameOver;
 
-			if(gameOver) {
-				alert("Game over");
-			}
-		});
+		var shape = canvas.getContext("2d");
 
+		shape.beginPath();
+
+		if(prevActivePlayer === players[0]) {
+			shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
+			shape.lineTo(x*gridStep -5, y*gridStep - 5);
+			shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
+			shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
+			shape.strokeStyle = "green";					
+		} else if(prevActivePlayer === players[1]) {
+			shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
+			shape.strokeStyle = "blue";
+		}
+
+		shape.stroke();
+
+		if(gameOver) {
+			alert("Game over");
+		}
 	});
 	
 
@@ -194,6 +200,7 @@ var gameOver = false;
 
 	//create New Game
 	$("#newGame").click(function() {
+		//delete joinrResult listener
 		socket.emit('createNewGame', socket.userID);
 	});
 
@@ -210,6 +217,7 @@ var gameOver = false;
 
 		//join to Game
 	    $('#room-list div').click(function(e) {
+	    	//delete joinResult listener
 	        socket.emit('joinGame', socket.userID, $(e.target).text());
 	    });
 	});
