@@ -13,11 +13,11 @@ var gameOver = false;
 		ctx.beginPath();
 
 		//drawing grid						
-		for(var i = gridStep; i < 600; i+=gridStep) {
+		for(var i = gridStep; i < 570; i+=gridStep) {
 			ctx.moveTo(i, 0);
-			ctx.lineTo(i, 600);
+			ctx.lineTo(i, 570);
 			ctx.moveTo(0, i);
-			ctx.lineTo(600, i);
+			ctx.lineTo(570, i);
 		}
 		ctx.strokeStyle="#a3a3a3";
 		ctx.stroke();
@@ -77,10 +77,10 @@ var gameOver = false;
 		}
 
 		$('<p id="sideInfo"></p>').appendTo("#gameContainer");
-		$('<canvas id="gameField" width="600" height="600" style="border: 1px solid #c3c3c3;"></canvas>').appendTo("#canvasContainer");
+		$('<canvas id="gameField" width="570" height="570" style="border: 1px solid #c3c3c3;"></canvas>').appendTo("#canvasContainer");
 
 		var canvas = document.getElementById("gameField");
-		var gridStep = canvas.width/20;
+		var gridStep = canvas.width/19;
 
 		var grid = answer.grid;
 		drawGrid(canvas, gridStep);
@@ -133,7 +133,7 @@ var gameOver = false;
 	socket.on('moveDone', function(answer) {
 		//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
 		var canvas = document.getElementById("gameField");
-		var gridStep = canvas.width/20;
+		var gridStep = canvas.width/19;
 		console.log(answer);
 		var prevActivePlayer = answer.userId;
 		activePlayerID = answer.activePlayerID;
