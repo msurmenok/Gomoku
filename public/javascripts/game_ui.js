@@ -24,24 +24,42 @@ var gameOver = false;
 	}
 
 	//drawing moves
-	function drawMove(x, y, playerId, canvas, gridStep) {
 
-		var shape = canvas.getContext("2d");
 
-		shape.beginPath();
+	function drawMove(grid, canvas, gridStep) {
+		//erase previous figures
+		var context = canvas.getContext("2d");
+		context.clearRect(0, 0, canvas.width, canvas.height);
 
-		if(playerId === players[0]) {
-			shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
-			shape.lineTo(x*gridStep -5, y*gridStep - 5);
-			shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
-			shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
-			shape.strokeStyle = "green";					
-		} else if(playerId === players[1]) {
-			shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
-			shape.strokeStyle = "blue";
+		drawGrid(canvas, gridStep);
+
+		for(var i = 0; i < grid.length; i++) {
+			var shape = canvas.getContext("2d");
+			var playerId = grid[i].playerID;
+			var x = grid[i].x;
+			var y = grid[i].y;
+			shape.beginPath();
+
+			if(playerId === players[0]) {
+				shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
+				shape.lineTo(x*gridStep -5, y*gridStep - 5);
+				shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
+				shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
+				shape.strokeStyle = "green";					
+			} else if(playerId === players[1]) {
+				shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
+				shape.strokeStyle = "blue";
+			}
+
+			if(i === grid.length - 1) {
+				//indicate last move and draw it bolder
+				shape.lineWidth=3;
+			}
+			shape.stroke();
+			shape.lineWidth=1;
 		}
 
-		shape.stroke();
+		
 	}
 
 	//give user new user id
@@ -86,9 +104,9 @@ var gameOver = false;
 		drawGrid(canvas, gridStep);
 
 		console.log(grid);
-		for(var i = 0; i < grid.length; i++) {
-			drawMove(grid[i].x, grid[i].y, grid[i].playerID, canvas, gridStep);
-		}
+
+		//drawMove
+		drawMove(grid, canvas, gridStep);
 
 		//calculate canvas position and mouse position
 		canvas.addEventListener('click', function(e) {			
@@ -106,9 +124,8 @@ var gameOver = false;
 			var positionY = Math.ceil(mouse.y / gridStep);
 			//emit new move
 
-			if(/*socket.userID === activePlayerID &&*/
-				positionX > 0 && positionX < 21 &&
-				positionY > 0 && positionY < 21) {
+			if(	positionX > 0 && positionX < 20 &&
+				positionY > 0 && positionY < 20) {
 				socket.emit('move', socket.userID, positionX, positionY);
 			}
 		});
@@ -122,44 +139,27 @@ var gameOver = false;
 		$("#sideO").click(function() {
 			socket.emit('verifySide', {id: socket.userID, side: 1});
 		});
-
-		//move
-		//delete listener
-
-
-
 	});
 
 	socket.on('moveDone', function(answer) {
-		//{ userId: userId, activePlayerID: this.activePlayerID, x: x, y: y }
+
 		var canvas = document.getElementById("gameField");
 		var gridStep = canvas.width/19;
 		console.log(answer);
 		var prevActivePlayer = answer.userId;
 		activePlayerID = answer.activePlayerID;
-		var x = answer.x;
-		var y = answer.y;
+		var grid = answer.grid;
 		gameOver = answer.gameOver;
 
-		var shape = canvas.getContext("2d");
-
-		shape.beginPath();
-
-		if(prevActivePlayer === players[0]) {
-			shape.moveTo((x-1)*gridStep + 5, (y-1)*gridStep + 5);
-			shape.lineTo(x*gridStep -5, y*gridStep - 5);
-			shape.moveTo(x*gridStep - 5, (y-1)*gridStep + 5);
-			shape.lineTo((x-1)*gridStep + 5, y*gridStep - 5);
-			shape.strokeStyle = "green";					
-		} else if(prevActivePlayer === players[1]) {
-			shape.arc(x*gridStep - gridStep/2, y*gridStep - gridStep/2, gridStep/2 - 5, 0, 2 * Math.PI);
-			shape.strokeStyle = "blue";
-		}
-
-		shape.stroke();
+		//draw last move
+		drawMove(grid, canvas, gridStep);
 
 		if(gameOver) {
-			alert("Game over");
+			var ctx = canvas.getContext("2d");
+			ctx.fillStyle = "red";
+			ctx.font = "70px Arial";			
+			ctx.lineWidth=10;
+			ctx.fillText("GAME OVER", 75, 300);
 		}
 	});
 	
