@@ -84,7 +84,7 @@ var gameOver = false;
 		$("#canvasContainer canvas").remove();
 
 		//add html elements
-		$('<p>Choose a side:</p>').appendTo("#gameContainer");
+		$('<h3>Choose a side:</h3>').appendTo("#gameContainer");
 
 		if(!players[0]) {
 			$('<div id="sideX"><input type="radio" name="side" ><strong>X</strong></div>').appendTo("#gameContainer");
