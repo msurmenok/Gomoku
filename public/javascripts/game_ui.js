@@ -79,7 +79,7 @@ var gameOver = false;
 		gameOver = answer.gameOver;
 
 		//remove previous elements
-		$("#gameContainer p").remove();
+		$("#gameContainer h3").remove();
 		$("#gameContainer div").remove();
 		$("#canvasContainer canvas").remove();
 
