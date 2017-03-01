@@ -56,7 +56,7 @@ var server = http.createServer(function(request, response) {
 });
 
 server.listen(80, function() {
-	console.log('Server listening on port 3000.');
+	console.log('Server listening on port 80.');
 });
 
 var gameServer = require('./lib/game_server');
