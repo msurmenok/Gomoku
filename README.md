@@ -11,3 +11,5 @@ You need [NodeJS](https://nodejs.org/) installed on your computer
 * Clone repository `git clone https://github.com/MariiaSurmenok/Gomoku.git`
 * In terminal run the command `node server.js`
 * Open [http://localhost](http://localhost) in your browser
+
+![Alt text](/gomoku_preview.png?raw=true)
